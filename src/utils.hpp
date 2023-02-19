@@ -39,12 +39,11 @@ inline unsigned long delta_ms(std::chrono::nanoseconds start, std::chrono::nanos
     return std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count() / 1e6;
 }
 
-inline std::vector<size_t> count_normal(const std::string& filename) {
+inline std::vector<size_t> count_brute_force(const std::string& filename) {
     std::ifstream file(filename);
     std::vector<size_t> result;
     std::string str; 
-    while (std::getline(file, str))
-    {
+    while (std::getline(file, str)) {
         result.push_back(str.length());
     }
 

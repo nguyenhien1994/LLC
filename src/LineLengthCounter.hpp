@@ -5,9 +5,7 @@
 struct ChunkResult {
     // [line number] -> length of the line
     std::vector<size_t> lines_counter;
-
-    char first_char;
-    char end_char;
+    char end_char; // the last char of chunk
 };
 
 class LineLengthCounter {

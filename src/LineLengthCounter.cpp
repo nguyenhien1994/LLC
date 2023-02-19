@@ -12,12 +12,19 @@
 
 LineLengthCounter::LineLengthCounter(const std::string& filename, size_t chunk_size) {
     fd_ = open(filename.c_str(), O_RDONLY);
+    if (fd_ == -1) {
+        std::cerr << "Failed to open file: " << filename << "errno: " << std::strerror(errno) << std::endl;
+        return;
+    }
+
     file_size_ = get_file_size(fd_);
     chunk_size_ = chunk_size;
     nbr_chunks_ = file_size_ / chunk_size_;
     last_chunk_size_ =  file_size_ % chunk_size_;
     if (last_chunk_size_ != 0) {
         nbr_chunks_++;
+    } else {
+        last_chunk_size_ = chunk_size_;
     }
     chunk_results_.resize(nbr_chunks_);
 }
@@ -47,25 +54,16 @@ void LineLengthCounter::chunk_counter(size_t chunk_number) {
         std::cerr << "Failed to read chunk: " << chunk_number << "errno: " << std::strerror(errno) << std::endl;
         return;
     }
-    result.first_char = buffer[0];
     result.end_char = buffer[len-1];
     {
         std::stringstream ss(buffer);
         std::string line;
-        size_t line_number = 0;
-        // std::cout << "chunk: " << chunk_number << std::endl;
-        // std::cout << "------" << std::endl;
-        // std::cout << "\tbuffer: " << buffer << std::endl;
         while (std::getline(ss, line)) {
             result.lines_counter.push_back(line.length());
-            // std::cout << "\t\t - line: " << line_number << " - len: " << line.length() << std::endl;
-            line_number++;
         }
-        // std::cout << "\t\t\t - first_char: " << result.first_char << " - end_char: " << result.end_char << "\n\n";
-        // std::cout << "------" << std::endl;
     }
 
-    chunk_results_[chunk_number] = result;
+    chunk_results_[chunk_number] = std::move(result);
 }
 
 // Merge 2 consecutive chunks
