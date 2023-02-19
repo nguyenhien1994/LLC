@@ -1,5 +1,5 @@
 ## LLC - Line Length Counter
-Simple algorithm to count the number of lines in a large file with length of the line.
+Simple algorithm to count the number of lines in a large file with length of the line with multi-thread version.
 
 ### How to build and run
 
