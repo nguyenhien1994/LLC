@@ -27,6 +27,8 @@ e.g. ./generate_text_file input100MB.txt 104857600
 
 #### Run tests: LineLengthCounter will run and compare the result with brute-force method
 ```
+USAGE: ./LineLengthCounter <input file> <chunk size in bytes>
+
 ./LineLengthCounter ../tests/input100kb.txt 100
 ------------../tests/input100kb.txt---------
 Runtime with LLC: 75 ms
