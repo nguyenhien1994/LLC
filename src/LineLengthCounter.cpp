@@ -19,28 +19,33 @@ LineLengthCounter::LineLengthCounter(const std::string& filename, size_t chunk_s
     if (last_chunk_size_ != 0) {
         nbr_chunks_++;
     }
+    chunk_results_.resize(nbr_chunks_);
 }
 
 std::vector<size_t> LineLengthCounter::count() {
-    std::vector<CounterResult> res(nbr_chunks_);
     for (size_t i = 0; i < nbr_chunks_; ++i) {
-        res[i] = std::move(this->chunk_counter(i));
+        workers_.push_back(std::thread(&LineLengthCounter::chunk_counter, this, i));
     }
 
-    return merge_chunk_results(res);
+    for (auto &t : workers_) {
+        t.join();
+    }
+
+    return merge_chunk_results();
 }
 
-CounterResult LineLengthCounter::chunk_counter(size_t chunk_number) {
-    CounterResult result;
+void LineLengthCounter::chunk_counter(size_t chunk_number) {
+    ChunkResult result;
     std::string buffer;
     size_t start_offset = chunk_number * chunk_size_;
-    size_t total_chars = chunk_number == (nbr_chunks_ - 1) ? last_chunk_size_ : chunk_size_;
-    buffer.resize(total_chars);
+    size_t required_size = chunk_number == (nbr_chunks_ - 1) ? last_chunk_size_ : chunk_size_;
+    buffer.resize(required_size);
 
-    auto len = pread(fd_, &buffer[0], total_chars, start_offset);
-    if (len != total_chars) {
-        std::cout << "WARN: pread return length != required length: " << len << std::endl;
-        std::cerr << "errno: " << std::strerror(errno) << std::endl;
+    // don't need to use any sync method here, pread will safe itself
+    auto len = pread(fd_, &buffer[0], required_size, start_offset);
+    if (len == -1) {
+        std::cerr << "Failed to read chunk: " << chunk_number << "errno: " << std::strerror(errno) << std::endl;
+        return;
     }
     result.first_char = buffer[0];
     result.end_char = buffer[len-1];
@@ -60,15 +65,17 @@ CounterResult LineLengthCounter::chunk_counter(size_t chunk_number) {
         // std::cout << "------" << std::endl;
     }
 
-    return result;
+    chunk_results_[chunk_number] = result;
 }
 
-void merge_consecutive_chunks(const CounterResult& from, CounterResult& to) {
+// Merge 2 consecutive chunks
+void LineLengthCounter::merge_consecutive_chunks(const ChunkResult& from, ChunkResult& to) {
     if (from.lines_counter.size() == 0) {
         // nothing to merge
         return;
     }
     size_t from_idx = 0;
+    // if last char of 'to' chunk not end with '\n', it should be merged with first line of 'from' chunk
     if (to.end_char != '\n') {
         to.lines_counter[to.lines_counter.size()-1] += from.lines_counter[0];
         from_idx++;
@@ -80,11 +87,11 @@ void merge_consecutive_chunks(const CounterResult& from, CounterResult& to) {
     to.end_char = from.end_char;
 }
 
-std::vector<size_t> LineLengthCounter::merge_chunk_results(const std::vector<CounterResult>& res_results) {
-    CounterResult res(res_results[0]);
-    for (size_t i = 1; i < res_results.size(); i++) {
-        merge_consecutive_chunks(res_results[i], res);
+std::vector<size_t> LineLengthCounter::merge_chunk_results() {
+    ChunkResult final_result(chunk_results_[0]);
+    for (size_t i = 1; i < chunk_results_.size(); i++) {
+        merge_consecutive_chunks(chunk_results_[i], final_result);
     }
 
-    return res.lines_counter;
+    return final_result.lines_counter;
 }

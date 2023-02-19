@@ -17,8 +17,6 @@ void print_counter(const T& counter) {
     auto idx = 0;
     for (const auto& c : counter) {
         std::cout << "\t - line: " << idx << " - len: " << c << std::endl;
-        if (idx > 100)
-            break;
         idx++;
     }
 }
@@ -37,8 +35,8 @@ inline std::chrono::nanoseconds nanotime() {
     return std::chrono::high_resolution_clock::now().time_since_epoch();
 }
 
-inline unsigned long delta_ns(std::chrono::nanoseconds start, std::chrono::nanoseconds end) {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count();
+inline unsigned long delta_ms(std::chrono::nanoseconds start, std::chrono::nanoseconds end) {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count() / 1e6;
 }
 
 inline std::vector<size_t> count_normal(const std::string& filename) {

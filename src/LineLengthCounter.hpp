@@ -2,8 +2,8 @@
 #include <vector>
 #include <thread>
 
-struct CounterResult {
-    // [line] -> length
+struct ChunkResult {
+    // [line number] -> length of the line
     std::vector<size_t> lines_counter;
 
     char first_char;
@@ -21,9 +21,10 @@ private:
     size_t nbr_chunks_;
     size_t chunk_size_;
     size_t last_chunk_size_;
-
+    std::vector<ChunkResult> chunk_results_;
     std::vector<std::thread> workers_;
 
-    CounterResult chunk_counter(size_t);
-    std::vector<size_t> merge_chunk_results(const std::vector<CounterResult>&);
+    void chunk_counter(size_t);
+    void merge_consecutive_chunks(const ChunkResult&, ChunkResult&);
+    std::vector<size_t> merge_chunk_results();
 };
