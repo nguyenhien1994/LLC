@@ -19,6 +19,7 @@ private:
     size_t nbr_chunks_;
     size_t chunk_size_;
     size_t last_chunk_size_;
+    // We can write to temporary file when the input file too large
     std::vector<ChunkResult> chunk_results_;
     std::vector<std::thread> workers_;
 
