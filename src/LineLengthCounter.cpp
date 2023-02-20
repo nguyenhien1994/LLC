@@ -30,6 +30,8 @@ LineLengthCounter::LineLengthCounter(const std::string& filename, size_t chunk_s
 }
 
 std::vector<size_t> LineLengthCounter::count() {
+    // TODO: use ThreadPool to avoid spawning to many threads
+    // that can lead to 'Resource temporarily unavailable' error
     for (size_t i = 0; i < nbr_chunks_; ++i) {
         workers_.push_back(std::thread(&LineLengthCounter::chunk_counter, this, i));
     }
