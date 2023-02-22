@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "LineLengthCounter.hpp"
+#include "ThreadPool.hpp"
 #include "utils.hpp"
 
 LineLengthCounter::LineLengthCounter(const std::string& filename, size_t chunk_size) {
@@ -30,40 +31,40 @@ LineLengthCounter::LineLengthCounter(const std::string& filename, size_t chunk_s
 }
 
 std::vector<size_t> LineLengthCounter::count() {
-    for (size_t i = 0; i < nbr_chunks_; ++i) {
-        workers_.push_back(std::thread(&LineLengthCounter::chunk_counter, this, i));
-    }
-
-    for (auto &t : workers_) {
-        t.join();
-    }
-
-    return merge_chunk_results();
-}
-
-void LineLengthCounter::chunk_counter(size_t chunk_number) {
-    ChunkResult result;
-    std::string buffer;
-    size_t start_offset = chunk_number * chunk_size_;
-    size_t required_size = chunk_number == (nbr_chunks_ - 1) ? last_chunk_size_ : chunk_size_;
-    buffer.resize(required_size);
-
-    // don't need to use any sync method here, pread will safe itself
-    auto len = pread(fd_, &buffer[0], required_size, start_offset);
-    if (len == -1) {
-        std::cerr << "Failed to read chunk: " << chunk_number << "errno: " << std::strerror(errno) << std::endl;
-        return;
-    }
-    result.end_char = buffer[len-1];
     {
-        std::stringstream ss(buffer);
-        std::string line;
-        while (std::getline(ss, line)) {
-            result.lines_counter.push_back(line.length());
+        auto chunk_counter = [this](size_t chunk_number) {
+            ChunkResult result;
+            std::string buffer;
+            size_t start_offset = chunk_number * chunk_size_;
+            size_t required_size = chunk_number == (nbr_chunks_ - 1) ? last_chunk_size_ : chunk_size_;
+            buffer.resize(required_size);
+
+            // don't need to use any sync method here, pread will safe itself
+            auto len = pread(this->fd_, &buffer[0], required_size, start_offset);
+            if (len == -1) {
+                std::cerr << "Failed to read chunk: " << chunk_number << "errno: " << std::strerror(errno) << std::endl;
+                return;
+            }
+            result.end_char = buffer[len-1];
+            {
+                std::stringstream ss(buffer);
+                std::string line;
+                while (std::getline(ss, line)) {
+                    result.lines_counter.push_back(line.length());
+                }
+            }
+
+            this->chunk_results_[chunk_number] = std::move(result);
+        };
+
+        static const size_t max_workers = std::thread::hardware_concurrency();
+        ThreadPool pool(std::min(max_workers, nbr_chunks_));
+        for (size_t i = 0; i < nbr_chunks_; ++i) {
+            pool.enqueue(chunk_counter, i);
         }
     }
 
-    chunk_results_[chunk_number] = std::move(result);
+    return merge_chunk_results();
 }
 
 // Merge 2 consecutive chunks
