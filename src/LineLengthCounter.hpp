@@ -23,7 +23,6 @@ private:
     std::vector<ChunkResult> chunk_results_;
     std::vector<std::thread> workers_;
 
-    void chunk_counter(size_t);
     void merge_consecutive_chunks(const ChunkResult&, ChunkResult&);
     std::vector<size_t> merge_chunk_results();
 };

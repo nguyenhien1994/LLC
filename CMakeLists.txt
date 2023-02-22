@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ########################
 # Build executable files
 ########################
-add_executable(LineLengthCounter src/main.cpp src/LineLengthCounter.cpp src/LineLengthCounter.hpp)
+add_executable(LineLengthCounter src/main.cpp src/LineLengthCounter.cpp src/LineLengthCounter.hpp src/ThreadPool.hpp)
 
 ########################
 # Build test program
