@@ -51,7 +51,7 @@ Runtime with brute-force: 7214 ms
 ```
 
 ### Notes for improvements
-- Use Thread Pool to avoid `Resource temporarily unavailable` when run with big input and small chunk sizes
-- Instead of storing the chunk results in std::vector, we can write to temporary files when the input file too large
-- Merge consecutive chunks in parallel?
-- Add unittests
+- [x] Use Thread Pool to avoid `Resource temporarily unavailable` when run with big input and small chunk sizes
+- [ ] Instead of storing the chunk results in std::vector, we can write to temporary files when the input file too large
+- [ ] Merge consecutive chunks in parallel?
+- [ ] Add unittests
